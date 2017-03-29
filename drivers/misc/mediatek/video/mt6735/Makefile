@@ -12,7 +12,8 @@
 #
 
 # drivers/video/mtk/Makefile
-#
+
+ccflags-y += -DCONFIG_MACH_MT6735_$(shell echo $(CONFIG_ARCH_MTK_PROJECT) | tr a-z A-Z)
 
 obj-$(CONFIG_MTK_FB) += mtkfb_console.o        \
 			    disp_assert_layer.o    \

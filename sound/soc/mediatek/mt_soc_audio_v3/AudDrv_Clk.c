@@ -117,7 +117,9 @@ enum audio_system_clock_type {
 	CLOCK_TOP_AUD_MUX2,
 	CLOCK_TOP_AD_APLL1_CK,
 	CLOCK_WHPLL_AUDIO_CK,
+#ifndef CONFIG_MACH_MT6735_PORRIDGEK3
 	CLOCK_MUX_AUDIO,
+#endif
 	CLOCK_MUX_AUDIOINTBUS,
 	CLOCK_TOP_SYSPLL1_D4,
 	CLOCK_APMIXED_APLL1_CK,
@@ -149,7 +151,9 @@ static struct audio_clock_attr aud_clks[CLOCK_NUM] = {
 	[CLOCK_TOP_AUD_MUX2] = {"aud_mux2_clk", false, false, NULL},
 	[CLOCK_TOP_AD_APLL1_CK] = {"top_ad_apll1_clk", false, false, NULL},
 	[CLOCK_WHPLL_AUDIO_CK] = {"top_whpll_audio_clk", false, false, NULL},
+#ifndef CONFIG_MACH_MT6735_PORRIDGEK3
 	[CLOCK_MUX_AUDIO] = {"top_mux_audio", false, false, NULL},
+#endif
 	[CLOCK_MUX_AUDIOINTBUS] = {"top_mux_audio_int", false, false, NULL},
 	[CLOCK_TOP_SYSPLL1_D4] = {"top_sys_pll1_d4", false, false, NULL},
 	[CLOCK_APMIXED_APLL1_CK] = {"apmixed_apll1_clk", false, false, NULL},
@@ -208,7 +212,7 @@ void AudDrv_Clk_probe(void *dev)
 		BUG();
 		return;
 	}
-
+#ifndef CONFIG_MACH_MT6735_PORRIDGEK3
 	if (aud_clks[CLOCK_MUX_AUDIO].clk_prepare) {
 		ret = clk_enable(aud_clks[CLOCK_MUX_AUDIO].clock);
 		if (ret) {
@@ -225,6 +229,7 @@ void AudDrv_Clk_probe(void *dev)
 		BUG();
 		return;
 	}
+#endif
 
 }
 

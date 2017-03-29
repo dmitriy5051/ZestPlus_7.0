@@ -16,6 +16,8 @@ MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
 subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include
 subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
 subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat
+ccflags-y += -DCONFIG_MACH_MT6735_$(shell echo $(CONFIG_ARCH_MTK_PROJECT) | tr a-z A-Z)
+$(warning "REI $(ccflags-y)")
 ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/base/power/$(MTK_PLATFORM)
 ccflags-y += -D_GIT318_READY
 ccflags-y += -D_GIT318_PMIC_READY
