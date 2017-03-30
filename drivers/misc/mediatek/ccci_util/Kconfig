@@ -106,3 +106,9 @@ config MTK_C2K_LTE_MODE
 	  1=>svlte mode,
 	  2=>srlte mode
 
+config MODEM_FIRMWARE_CIP_PATH
+       string "MODEM_FIRMWARE_CIP_PATH"
+       default ""
+       help
+         Defines a custom path for modem firmware.
+
