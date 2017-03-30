@@ -47,6 +47,7 @@
 #endif
 #define ENABLE_MEM_SIZE_CHECK
 #define MAX_MD_NUM (6)		/* Max 4 internal + Max 2 exteranl */
+#include <linux/ctype.h>
 
 /*==================================================== */
 /* Image process section */
@@ -98,6 +99,14 @@ static int check_dsp_header(int md_id, void *parse_addr, struct ccci_image_info 
 {
 	return 0;
 }
+
+static inline void filter_suffix(char *suffix, int len) {
+	int i;
+	for (i = 0; i < len; i++)
+		if (!isalnum(suffix[i]))
+			suffix[i] = 0;
+}
+
 
 static int check_md_header_v3(int md_id, void *parse_addr, struct ccci_image_info *image)
 {
@@ -747,7 +756,22 @@ int ccci_load_firmware(int md_id, void *img_inf, char img_err_str[], char post_f
 	char *img_str = md_img_info_str[md_id];
 	int scan_max;
 	int md_type_val;
+	struct file *filp = NULL;
+	int nread = 0;
+	char cip_suffix[65] = { 0 };
 
+	/* Try to get an optional suffix from the userspace suffixed path for region-specific
+	 * variants. */
+	filp = filp_open(CONFIG_MODEM_USERSPACE_SUFFIX_PATH, O_RDONLY, 0644);
+	if (!IS_ERR(filp)) {
+		nread = (int)filp->f_op->read(filp, cip_suffix+1, sizeof(cip_suffix)-1, &filp->f_pos);
+		cip_suffix[0] = '_';
+		if (nread > 0) {
+			cip_suffix[nread+1] = 0;
+			filter_suffix(cip_suffix+1, sizeof(cip_suffix)-1);
+		}
+		filp_close(filp, current->files);
+	}
 
 	if (dev == NULL) {
 		CCCI_UTIL_ERR_MSG_WITH_ID(md_id, "dev == NULL\n");
@@ -758,9 +782,9 @@ int ccci_load_firmware(int md_id, void *img_inf, char img_err_str[], char post_f
 	get_md_postfix(md_id, NULL, post_fix, NULL);
 
 	if (img->type == IMG_MD) {	/*  Gen MD image name */
-		snprintf(img_name, IMG_NAME_LEN, "modem_%s.img", post_fix);
+		snprintf(img_name, IMG_NAME_LEN, "modem_%s.img%s", post_fix, cip_suffix);
 	} else if (img->type == IMG_DSP) {	/*  Gen DSP image name */
-		snprintf(img_name, IMG_NAME_LEN, "dsp_%s.bin", post_fix);
+		snprintf(img_name, IMG_NAME_LEN, "dsp_%s.bin%s", post_fix, cip_suffix);
 	}  else if (img->type == IMG_ARMV7) {	/* Gen ARMV7 image name */
 		snprintf(img_name, IMG_NAME_LEN, "armv7_%s.bin", post_fix);
 	} else {
@@ -789,9 +813,9 @@ TRY_LOAD_IMG:
 		if (i <= scan_max) {
 			CCCI_UTIL_INF_MSG_WITH_ID(md_id, "Curr i:%d\n", i);
 			if (img->type == IMG_MD)
-				snprintf(img_name, IMG_NAME_LEN, "modem_%d_%s_n.img", md_id+1, type_str[i]);
+				snprintf(img_name, IMG_NAME_LEN, "modem_%d_%s_n.img%s", md_id+1, type_str[i], cip_suffix);
 			else if (img->type == IMG_DSP)
-				snprintf(img_name, IMG_NAME_LEN, "dsp_%d_%s_n.bin", md_id+1, type_str[i]);
+				snprintf(img_name, IMG_NAME_LEN, "dsp_%d_%s_n.bin%s", md_id+1, type_str[i], cip_suffix);
 			else if (img->type == IMG_ARMV7)
 				snprintf(img_name, IMG_NAME_LEN, "armv7_%d_%s_n.bin", md_id+1, type_str[i]);
 			else {
