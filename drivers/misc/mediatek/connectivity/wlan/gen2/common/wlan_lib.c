@@ -3664,9 +3664,11 @@ WLAN_STATUS wlanLoadManufactureData(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T pr
 
 #endif
 
+#if 1
+        prAdapter->fgIsHw5GBandDisabled = TRUE;
+#endif
 	/* 3. Check if needs to support 5GHz */
-	/* if(prRegInfo->ucEnable5GBand) { // Frank workaround */
-	if (1) {
+	if(prRegInfo->ucEnable5GBand) { 
 		/* check if it is disabled by hardware */
 		if (prAdapter->fgIsHw5GBandDisabled || prRegInfo->ucSupport5GBand == 0)
 			prAdapter->fgEnable5GBand = FALSE;
@@ -3674,6 +3676,7 @@ WLAN_STATUS wlanLoadManufactureData(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T pr
 			prAdapter->fgEnable5GBand = TRUE;
 	} else
 		prAdapter->fgEnable5GBand = FALSE;
+
 /*
 	DBGLOG(INIT, INFO, "NVRAM 5G Enable(%d) SW_En(%d) HW_Dis(%d)\n",
 	       prRegInfo->ucEnable5GBand, prRegInfo->ucSupport5GBand, prAdapter->fgIsHw5GBandDisabled);
