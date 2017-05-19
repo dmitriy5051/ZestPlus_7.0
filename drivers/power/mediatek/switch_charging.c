@@ -831,7 +831,8 @@ static void mtk_select_ichg_aicr(void)
 			"USB_CURRENT_UNLIMITED, use batt_cust_data.ac_charger_current\n");
 	}
 #ifndef CONFIG_MTK_SWITCH_INPUT_OUTPUT_CURRENT_SUPPORT
-	else if (g_bcct_flag == 1) {
+	/*sanford add on 20150908 for aeon*/
+	else if (g_bcct_flag == 1 && BMT_status.temperature > (batt_cust_data.max_charge_temperature-10)) {
 		select_charging_current_bcct();
 		battery_log(BAT_LOG_FULL,
 			"[BATTERY] select_charging_current_bcct !\n");
