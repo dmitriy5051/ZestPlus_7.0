@@ -166,13 +166,21 @@ VOID scnInit(IN P_ADAPTER_T prAdapter)
 
 	/* reset NLO state */
 	prScanInfo->fgNloScanning = FALSE;
+
 #if CFG_SUPPORT_SCN_PSCN
 	prScanInfo->fgPscnOngoing = FALSE;
 	prScanInfo->fgGScnConfigSet = FALSE;
 	prScanInfo->fgGScnParamSet = FALSE;
+
+	/* reset postpone Sched Scan Request*/
+	prScanInfo->fgIsPostponeSchedScan = FALSE;
+
 	prScanInfo->prPscnParam = kalMemAlloc(sizeof(CMD_SET_PSCAN_PARAM), VIR_MEM_TYPE);
-	if (prScanInfo->prPscnParam)
-		kalMemZero(prScanInfo->prPscnParam, sizeof(CMD_SET_PSCAN_PARAM));
+	if (!(prScanInfo->prPscnParam)) {
+		DBGLOG(SCN, ERROR, "Alloc memory for CMD_SET_PSCAN_PARAM fail\n");
+		return;
+	}
+	kalMemZero(prScanInfo->prPscnParam, sizeof(CMD_SET_PSCAN_PARAM));
 
 	prScanInfo->eCurrentPSCNState = PSCN_IDLE;
 #endif
@@ -180,9 +188,15 @@ VOID scnInit(IN P_ADAPTER_T prAdapter)
 #if CFG_SUPPORT_GSCN
 	prScanInfo->prGscnFullResult = kalMemAlloc(offsetof(PARAM_WIFI_GSCAN_FULL_RESULT, ie_data)
 			+ CFG_IE_BUFFER_SIZE, VIR_MEM_TYPE);
-	if (prScanInfo->prGscnFullResult)
-		kalMemZero(prScanInfo->prGscnFullResult,
-			offsetof(PARAM_WIFI_GSCAN_FULL_RESULT, ie_data) + CFG_IE_BUFFER_SIZE);
+	if (!(prScanInfo->prGscnFullResult)) {
+#if CFG_SUPPORT_SCN_PSCN
+		kalMemFree(prScanInfo->prPscnParam, VIR_MEM_TYPE, sizeof(CMD_SET_PSCAN_PARAM));
+#endif
+		DBGLOG(SCN, ERROR, "Alloc memory for PARAM_WIFI_GSCAN_FULL_RESULT fail\n");
+		return;
+	}
+	kalMemZero(prScanInfo->prGscnFullResult,
+		offsetof(PARAM_WIFI_GSCAN_FULL_RESULT, ie_data) + CFG_IE_BUFFER_SIZE);
 #endif
 
 	prScanInfo->u4ScanUpdateIdx = 0;
@@ -1194,6 +1208,17 @@ P_BSS_DESC_T scanAddToBssDesc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 		fgIsNewBssDesc = TRUE;
 
 		do {
+			if (!fgIsValidSsid) {
+				prBssDesc = scanSearchBssDescByBssid(prAdapter, (PUINT_8)prWlanBeaconFrame->aucBSSID);
+				if (prBssDesc == (P_BSS_DESC_T) NULL) {
+					DBGLOG(SCN, INFO, "ignore hidden BSS(%pM) now\n",
+						(PUINT_8)prWlanBeaconFrame->aucBSSID);
+					return NULL;
+				}
+				DBGLOG(SCN, INFO, "ssid is empty, don't update hidden BSS(%pM) now\n",
+					(PUINT_8)prWlanBeaconFrame->aucBSSID);
+				return prBssDesc;
+			}
 			/* 4 <1.2.1> First trial of allocation */
 			prBssDesc = scanAllocateBssDesc(prAdapter);
 			if (prBssDesc)
@@ -1488,7 +1513,12 @@ P_BSS_DESC_T scanAddToBssDesc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 				}
 			}
 #endif
-
+#if CFG_SUPPORT_HOTSPOT_2_0
+			/* since OSEN is mutual exclusion with RSN, so we reuse RSN here */
+			if (pucIE[1] >= 10 && kalMemCmp(pucIE+2, "\x50\x6f\x9a\x12", 4) == 0 &&
+				rsnParseOsenIE(prAdapter, (struct IE_WFA_OSEN *)pucIE, &prBssDesc->rRSNInfo))
+				prBssDesc->fgIEOsen = TRUE;
+#endif
 #if CFG_ENABLE_WIFI_DIRECT
 			if (prAdapter->fgIsP2PRegistered) {
 				if (p2pFuncParseCheckForP2PInfoElem(prAdapter, pucIE, &ucOuiType)) {
@@ -1907,7 +1937,7 @@ VOID scanReportBss2Cfg80211(IN P_ADAPTER_T prAdapter, IN ENUM_BSS_TYPE_T eBSSTyp
 		prAdapter->rWifiVar.rChnLoadInfo.fgDataReadyBit = TRUE;
 #endif
 	}
-
+	wlanDebugScanTargetBSSDump(prAdapter);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2081,6 +2111,9 @@ WLAN_STATUS scanProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_
 							 prSwRfb->prHifRxHdr->ucRcpi);
 			}
 #endif /* CFG_SUPPORT_ADHOC */
+			/*dump beacon and probeRsp by connect setting SSID*/
+			wlanDebugScanTargetBSSRecord(prAdapter, prBssDesc);
+
 		}
 
 		rlmProcessBcn(prAdapter,
@@ -2176,6 +2209,7 @@ P_BSS_DESC_T scanSearchBssDescByPolicy(IN P_ADAPTER_T prAdapter, IN ENUM_NETWORK
 	/* UINT_8 aucChannelLoad[CHANNEL_NUM] = {0}; */
 
 	BOOLEAN fgIsFixedChannel;
+	BOOLEAN fgIsAbsentCandidateBss = TRUE;
 	ENUM_BAND_T eBand = 0;
 	UINT_8 ucChannel = 0;
 
@@ -2543,7 +2577,8 @@ P_BSS_DESC_T scanSearchBssDescByPolicy(IN P_ADAPTER_T prAdapter, IN ENUM_NETWORK
 					fgIsFindFirst = TRUE;
 				} else {
 					/* Can't pass the Encryption Status Check, get next one */
-					DBGLOG(SCN, TRACE, "SEARCH: WAPI cannot pass the Encryption Status Check!\n");
+					DBGLOG(SCN, TRACE, "SEARCH: Encryption check failure, prPrimaryBssDesc=[%pM]\n",
+					       prPrimaryBssDesc->aucBSSID);
 					continue;
 				}
 			} else
@@ -2580,6 +2615,7 @@ P_BSS_DESC_T scanSearchBssDescByPolicy(IN P_ADAPTER_T prAdapter, IN ENUM_NETWORK
 #endif
 			} else {
 				/* Can't pass the Encryption Status Check, get next one */
+				DBGLOG(RSN, WARN, "Can't pass the Encryption Status Check, get next one\n");
 				continue;
 			}
 #endif
@@ -2706,7 +2742,6 @@ P_BSS_DESC_T scanSearchBssDescByPolicy(IN P_ADAPTER_T prAdapter, IN ENUM_NETWORK
 							SCN_BSS_JOIN_FAIL_CNT_RESET_SEC);
 					}
 				}
-
 				/* NOTE: To prevent SWING,
 				 * we do roaming only if target AP has at least 5dBm larger than us. */
 				if (prCandidateBssDesc->fgIsConnected) {
@@ -2746,10 +2781,25 @@ P_BSS_DESC_T scanSearchBssDescByPolicy(IN P_ADAPTER_T prAdapter, IN ENUM_NETWORK
 		}
 	}
 
-
 	if (prCandidateBssDesc != NULL) {
 		DBGLOG(SCN, INFO,
-		       "SEARCH: Candidate BSS: %pM\n", prCandidateBssDesc->aucBSSID);
+		       "SEARCH: Candidate BSS: %pM, RSSI = %d\n", prCandidateBssDesc->aucBSSID,
+		       RCPI_TO_dBm(prCandidateBssDesc->ucRCPI));
+	} else {
+		DBGLOG(SCN, WARN, "SEARCH: Candidate BSS is NULL\n");
+		/* 4 <1> The outer loop to search for a candidate. */
+		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry, BSS_DESC_T) {
+			if (EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
+							prConnSettings->aucSSID, prConnSettings->ucSSIDLen)) {
+				fgIsAbsentCandidateBss = FALSE;
+				DBGLOG(SCN, INFO, "Find %s [%pM] in %d BSS!\n", prBssDesc->aucSSID
+					, prBssDesc->aucBSSID
+					, (UINT_32) prBSSDescList->u4NumElem);
+			}
+		}
+		if (fgIsAbsentCandidateBss == TRUE)
+			DBGLOG(SCN, WARN, "Driver can't find :%s in %d BSS list!\n", prConnSettings->aucSSID
+					, (UINT_32) prBSSDescList->u4NumElem);
 	}
 
 	return prCandidateBssDesc;

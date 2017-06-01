@@ -98,7 +98,8 @@ static struct ieee80211_channel mtk_2ghz_channels[] = {
 #define CHAN5G(_channel, _flags)                    \
 {                                               \
 	.band               = IEEE80211_BAND_5GHZ,      \
-	.center_freq        = 5000 + (5 * (_channel)),  \
+	.center_freq        = (((_channel >= 182) && (_channel <= 196)) ? \
+				 (4000 + (5 * (_channel))) : (5000 + (5 * (_channel)))),  \
 	.hw_value           = (_channel),               \
 	.flags              = (_flags),                 \
 	.max_antenna_gain   = 0,                        \
@@ -197,7 +198,7 @@ struct ieee80211_supported_band mtk_band_5ghz = {
 	.ht_cap = WLAN_HT_CAP,
 };
 
-const UINT_32 mtk_cipher_suites[5] = {
+const UINT_32 mtk_cipher_suites[] = {
 	/* keep WEP first, it may be removed below */
 	WLAN_CIPHER_SUITE_WEP40,
 	WLAN_CIPHER_SUITE_WEP104,
@@ -205,7 +206,8 @@ const UINT_32 mtk_cipher_suites[5] = {
 	WLAN_CIPHER_SUITE_CCMP,
 
 	/* keep last -- depends on hw flags! */
-	WLAN_CIPHER_SUITE_AES_CMAC
+	WLAN_CIPHER_SUITE_AES_CMAC,
+	WLAN_CIPHER_SUITE_NO_GROUP_ADDR
 };
 
 /*********************************************************/

@@ -621,6 +621,12 @@
 #define CATEGORY_WME_MGT_NOTIFICATION               17	/* WME management notification */
 #define CATEGORY_VENDOR_SPECIFIC_ACTION             127
 
+/* Public Action field*/
+#define PUBLIC_ACTION_GAS_INITIAL_REQ		    10
+#define PUBLIC_ACTION_GAS_INITIAL_RESP		    11
+#define PUBLIC_ACTION_GAS_COMEBACK_REQ		    12
+#define PUBLIC_ACTION_GAS_COMEBACK_RESP		    13
+
 /* 7.3.1.14 Block Ack Parameter Set field */
 #define BA_PARAM_SET_ACK_POLICY_MASK                BIT(1)
 #define BA_PARAM_SET_ACK_POLICY_MASK_OFFSET         1
@@ -2108,6 +2114,16 @@ struct ACTION_NEIGHBOR_REPORT_FRAME {
 	UINT_8 ucDialogToken;	/* Dialog Token */
 	UINT_8 aucInfoElem[1];	/* subelements */
 };
+struct IE_WFA_OSEN {
+	UINT_8 ucId;
+	UINT_8 ucLength;
+	UINT_8 aucOui[3];
+	UINT_8 ucOuiType;
+	UINT_32 u4GroupKeyCipherSuite;
+	UINT_16 u2PairwiseKeyCipherSuiteCount;
+	UINT_8 aucPairwiseKeyCipherSuite1[4];
+};
+
 
 /* 3 Information Elements from WFA. */
 typedef struct _IE_WFA_T {

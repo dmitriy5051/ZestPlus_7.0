@@ -661,6 +661,10 @@ wlanAdapterStart(IN P_ADAPTER_T prAdapter,
 		/* configure available PHY type set */
 		nicSetAvailablePhyTypeSet(prAdapter);
 
+#ifdef CFG_TC1_FEATURE /* for Passive Scan */
+		prAdapter->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
+#endif
+
 #if 1				/* set PM parameters */
 		{
 #if  CFG_SUPPORT_PWR_MGT
@@ -3146,10 +3150,11 @@ WLAN_STATUS wlanQueryNicCapability(IN P_ADAPTER_T prAdapter)
 	u4FwIDVersion = (prAdapter->rVerInfo.u2FwProductID << 16) | (prAdapter->rVerInfo.u2FwOwnVersion);
 	mtk_wcn_wmt_set_wifi_ver(u4FwIDVersion);
 
-	DBGLOG(INIT, INFO, "<wifi> ProductID: 0x%x FwVer: 0x%x.%x\n"
+	DBGLOG(INIT, INFO, "<wifi> ProductID: 0x%x FwVer: 0x%x.%x DriVer:%s\n"
 		, prAdapter->rVerInfo.u2FwProductID
 		, prAdapter->rVerInfo.u2FwOwnVersion
-		, prAdapter->rVerInfo.u2FwOwnVersionExtend);
+		, prAdapter->rVerInfo.u2FwOwnVersionExtend
+		, WIFI_DRIVER_VERSION);
 
 #if (CFG_SUPPORT_TDLS == 1)
 	if (prEventNicCapability->ucFeatureSet & (1 << FEATURE_SET_OFFSET_TDLS))

@@ -796,7 +796,7 @@ UINT_8 nicRxProcessGSCNEvent(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb
 			mtk_cfg80211_vendor_event_full_scan_results(wiphy,
 					prGlueInfo->prDevHandler->ieee80211_ptr,
 					prScanInfo->prGscnFullResult,
-					sizeof(PARAM_WIFI_GSCAN_FULL_RESULT) + ie_len);
+					offsetof(PARAM_WIFI_GSCAN_FULL_RESULT, ie_data) + ie_len);
 		}
 		break;
 
@@ -1590,9 +1590,7 @@ VOID nicRxProcessEventPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb
 VOID nicRxProcessMgmtPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 {
 	UINT_8 ucSubtype;
-#if CFG_SUPPORT_802_11W
-	BOOLEAN fgMfgDrop = FALSE;
-#endif
+
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
@@ -1625,8 +1623,13 @@ VOID nicRxProcessMgmtPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 	if ((prAdapter->fgTestMode == FALSE) && (prAdapter->prGlueInfo->fgIsRegistered == TRUE)) {
 #if CFG_MGMT_FRAME_HANDLING
 #if CFG_SUPPORT_802_11W
+		P_RX_CTRL_T prRxCtrl;
+		BOOLEAN fgMfgDrop = FALSE;
+
 		fgMfgDrop = rsnCheckRxMgmt(prAdapter, prSwRfb, ucSubtype);
 		if (fgMfgDrop) {
+			prRxCtrl = &prAdapter->rRxCtrl;
+			ASSERT(prRxCtrl);
 #if DBG
 			LOG_FUNC("QM RX MGT: Drop Unprotected Mgmt frame!!!\n");
 #endif
@@ -2806,7 +2809,7 @@ WLAN_STATUS nicRxProcessActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSw
 	if (prSwRfb->u2PacketLen < sizeof(WLAN_ACTION_FRAME) - 1)
 		return WLAN_STATUS_INVALID_PACKET;
 	prActFrame = (P_WLAN_ACTION_FRAME) prSwRfb->pvHeader;
-	DBGLOG(RX, INFO, "Category %u\n", prActFrame->ucCategory);
+	DBGLOG(RX, INFO, "Category %u, Action %u\n", prActFrame->ucCategory, prActFrame->ucAction);
 
 	switch (prActFrame->ucCategory) {
 	case CATEGORY_QOS_ACTION:
@@ -2814,6 +2817,10 @@ WLAN_STATUS nicRxProcessActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSw
 		handleQosMapConf(prAdapter, prSwRfb);
 		break;
 	case CATEGORY_PUBLIC_ACTION:
+		if (prActFrame->ucAction == PUBLIC_ACTION_GAS_INITIAL_REQ) /* GAS Initial Request */
+			DBGLOG(RX, INFO, "received GAS Initial Request frame\n");
+		else if (prActFrame->ucAction == PUBLIC_ACTION_GAS_INITIAL_RESP) /* GAS Initial Response */
+			DBGLOG(RX, INFO, "received GAS Initial Response frame\n");
 		if (HIF_RX_HDR_GET_NETWORK_IDX(prSwRfb->prHifRxHdr) == NETWORK_TYPE_AIS_INDEX)
 			aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
 #if CFG_ENABLE_WIFI_DIRECT
@@ -2848,10 +2855,11 @@ WLAN_STATUS nicRxProcessActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSw
 			if ((HIF_RX_HDR_GET_NETWORK_IDX(prHifRxHdr) == NETWORK_TYPE_AIS_INDEX)
 					&& prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection	/* Use MFP */) {
 				if (!(prHifRxHdr->ucReserved & CONTROL_FLAG_UC_MGMT_NO_ENC)) {
+					DBGLOG(RSN, INFO, "Rx SA Query\n");
 					/* MFP test plan 5.3.3.4 */
 					rsnSaQueryAction(prAdapter, prSwRfb);
 				} else {
-					DBGLOG(RSN, TRACE, "Un-Protected SA Query, do nothing\n");
+					DBGLOG(RSN, WARN, "Un-Protected SA Query, do nothing\n");
 				}
 			}
 		}

@@ -257,7 +257,7 @@ static int disp_gamma_set_listener(DISP_MODULE_ENUM module, ddp_module_notify no
 
 static int disp_gamma_bypass(DISP_MODULE_ENUM module, int bypass)
 {
-	int relay = 0;
+	int relay = 1;
 
 	if (bypass)
 		relay = 1;

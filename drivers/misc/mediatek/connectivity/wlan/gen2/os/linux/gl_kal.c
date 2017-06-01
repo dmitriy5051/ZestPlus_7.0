@@ -266,6 +266,7 @@ WLAN_STATUS kalFirmwareLoad(IN P_GLUE_INFO_T prGlueInfo, OUT PVOID prBuf, IN UIN
 		goto error_read;
 	} else {
 		filp->f_pos = u4Offset;
+		DBGLOG(INIT, INFO, "kalFirmwareLoad read start!\n");
 		*pu4Size = filp->f_op->read(filp, prBuf, *pu4Size, &filp->f_pos);
 	}
 
@@ -1560,6 +1561,7 @@ kalQoSFrameClassifierAndPacketInfo(IN P_GLUE_INFO_T prGlueInfo,
 	if ((u2EtherTypeLen == ETH_P_IP) && (u4PacketLen >= LOOK_AHEAD_LEN)) {
 		PUINT_8 pucIpHdr = &aucLookAheadBuf[ETH_HLEN];
 		UINT_8 ucIpVersion;
+		PUINT_8 pucIpPayload = pucIpHdr + 20;
 
 		ucIpVersion = (pucIpHdr[0] & IPVH_VERSION_MASK) >> IPVH_VERSION_OFFSET;
 		if (ucIpVersion == IPVERSION) {
@@ -1567,8 +1569,20 @@ kalQoSFrameClassifierAndPacketInfo(IN P_GLUE_INFO_T prGlueInfo,
 			ucIpTos = pucIpHdr[1];
 			/* Get the DSCP value from the header of IP packet. */
 			ucUserPriority = getUpFromDscp(prGlueInfo, *pucNetworkType, ucIpTos & 0x3F);
-			if (ucUserPriority == 0xFF)
-				ucUserPriority = ((ucIpTos & IPTOS_PREC_MASK) >> IPTOS_PREC_OFFSET);
+
+
+
+#if (1 || defined(PPR2_TEST))
+			DBGLOG(TX, TRACE, "setUP ucIpTos: %d, ucUP: %d\n", ucIpTos, ucUserPriority);
+			if (pucIpHdr[9] == IP_PRO_ICMP && pucIpPayload[0] == 0x08) {
+				DBGLOG(TX, INFO, "PING ipid: %d ucIpTos: %d, ucUP: %d\n",
+					(pucIpHdr[5] << 8 | pucIpHdr[4]),
+					ucIpTos, ucUserPriority);
+			}
+#endif
+		if (ucUserPriority == 0xFF)
+			ucUserPriority = ((ucIpTos & IPTOS_PREC_MASK) >> IPTOS_PREC_OFFSET);
+
 		}
 
 		/* TODO(Kevin): Add TSPEC classifier here */
@@ -4049,6 +4063,7 @@ inline INT_32 kalPerMonStart(IN P_GLUE_INFO_T prGlueInfo)
 	prPerMonitor->ulThroughput = 0;
 	prPerMonitor->u4CurrPerfLevel = 0;
 	prPerMonitor->u4TarPerfLevel = 0;
+	prPerMonitor->u1ShutdownCoreCount = 0;
 
 	cnmTimerStartTimer(prGlueInfo->prAdapter, &prPerMonitor->rPerfMonTimer, prPerMonitor->u4UpdatePeriod);
 	KAL_SET_BIT(PERF_MON_RUNNING_BIT, prPerMonitor->ulPerfMonFlag);
@@ -4085,6 +4100,8 @@ inline INT_32 kalPerMonStop(IN P_GLUE_INFO_T prGlueInfo)
 		prPerMonitor->ulThroughput = 0;
 		prPerMonitor->u4CurrPerfLevel = 0;
 		prPerMonitor->u4TarPerfLevel = 0;
+		prPerMonitor->u1ShutdownCoreCount = 0;
+
 		/*Cancel CPU performance mode request*/
 		kalBoostCpu(0);
 	}
@@ -4107,6 +4124,7 @@ VOID kalPerMonHandler(IN P_ADAPTER_T prAdapter, ULONG ulParam)
 	LONG latestTxBytes, latestRxBytes, txDiffBytes, rxDiffBytes;
 	LONG p2pLatestTxBytes, p2pLatestRxBytes, p2pTxDiffBytes, p2pRxDiffBytes;
 	P_GLUE_INFO_T prGlueInfo = prAdapter->prGlueInfo;
+	BOOLEAN needBoostCpu = TRUE;
 
 	if ((prGlueInfo->ulFlag & GLUE_FLAG_HALT) || (!prAdapter->fgIsP2PRegistered))
 		return;
@@ -4132,7 +4150,6 @@ VOID kalPerMonHandler(IN P_ADAPTER_T prAdapter, ULONG ulParam)
 			txDiffBytes = -(txDiffBytes);
 		if (0 > rxDiffBytes)
 			rxDiffBytes = -(rxDiffBytes);
-
 		p2pTxDiffBytes = p2pLatestTxBytes - prPerMonitor->ulP2PLastTxBytes;
 		p2pRxDiffBytes = p2pLatestRxBytes - prPerMonitor->ulP2PLastRxBytes;
 		if (0 > p2pTxDiffBytes)
@@ -4141,24 +4158,43 @@ VOID kalPerMonHandler(IN P_ADAPTER_T prAdapter, ULONG ulParam)
 			p2pRxDiffBytes = -(p2pRxDiffBytes);
 
 		prPerMonitor->ulThroughput = txDiffBytes + rxDiffBytes + p2pTxDiffBytes + p2pRxDiffBytes;
-		prPerMonitor->ulThroughput *= 1000;
-		prPerMonitor->ulThroughput /= prPerMonitor->u4UpdatePeriod;
+		prPerMonitor->ulThroughput *= (prPerMonitor->u4UpdatePeriod/1000);
 		prPerMonitor->ulThroughput <<= 3;
-	}
 
+		/* AIS: [Bytes TX][Bytes RX] [Packet TX][Packet RX], P2P: [Bytes TX][Bytes RX] [Packet TX][Packet RX] */
+		DBGLOG(SW4, INFO,
+			"kalPerMonHandler > Tput: %ld > AIS:[%ld][%ld] [%ld][%ld], P2P:[%ld][%ld] [%ld][%ld]\n",
+			prPerMonitor->ulThroughput,
+			txDiffBytes, rxDiffBytes,
+			prGlueInfo->rNetDevStats.tx_packets, prGlueInfo->rNetDevStats.rx_packets,
+			p2pTxDiffBytes, p2pRxDiffBytes,
+			prGlueInfo->prP2PInfo->rNetDevStats.tx_packets, prGlueInfo->prP2PInfo->rNetDevStats.rx_packets);
+	}
 	prPerMonitor->ulLastTxBytes = latestTxBytes;
 	prPerMonitor->ulLastRxBytes = latestRxBytes;
 	prPerMonitor->ulP2PLastTxBytes = p2pLatestTxBytes;
 	prPerMonitor->ulP2PLastRxBytes = p2pLatestRxBytes;
 
-	if (prPerMonitor->ulThroughput < THROUGHPUT_L1_THRESHOLD)
+	if (prPerMonitor->ulThroughput < THROUGHPUT_L1_THRESHOLD) {
+		if (prPerMonitor->u4CurrPerfLevel != 0 &&
+			prPerMonitor->u1ShutdownCoreCount < THROUGHPUT_SHUTDOWN_CORE_COUNT) {
+			prPerMonitor->u1ShutdownCoreCount++;
+			DBGLOG(SW4, INFO, "kalPerMonHandler > u1ShutdownCoreCount: %d\n",
+				prPerMonitor->u1ShutdownCoreCount);
+				needBoostCpu = FALSE;
+		}
 		prPerMonitor->u4TarPerfLevel = 0;
+	}
 	else if (prPerMonitor->ulThroughput < THROUGHPUT_L2_THRESHOLD)
 		prPerMonitor->u4TarPerfLevel = 1;
 	else if (prPerMonitor->ulThroughput < THROUGHPUT_L3_THRESHOLD)
 		prPerMonitor->u4TarPerfLevel = 2;
 	else
 		prPerMonitor->u4TarPerfLevel = 3;
+
+	if (prPerMonitor->u4TarPerfLevel != 0) {
+		prPerMonitor->u1ShutdownCoreCount = 0;
+	}
 
 	if (fgIsUnderSuspend ||
 		wlan_fb_power_down ||
@@ -4168,17 +4204,17 @@ VOID kalPerMonHandler(IN P_ADAPTER_T prAdapter, ULONG ulParam)
 		kalPerMonStop(prGlueInfo);
 	else {
 		DBGLOG(SW4, TRACE, "throughput:%ld bps\n", prPerMonitor->ulThroughput);
-		if (prPerMonitor->u4TarPerfLevel != prPerMonitor->u4CurrPerfLevel) {
+		if (needBoostCpu && (prPerMonitor->u4TarPerfLevel != prPerMonitor->u4CurrPerfLevel)) {
 			/* if tar level = 0; core_number=prPerMonitor->u4TarPerfLevel+1*/
 			if (prPerMonitor->u4TarPerfLevel)
 				kalBoostCpu(prPerMonitor->u4TarPerfLevel+1);
 			else
 				kalBoostCpu(0);
+
+			prPerMonitor->u4CurrPerfLevel = prPerMonitor->u4TarPerfLevel;
 		}
 		cnmTimerStartTimer(prGlueInfo->prAdapter, &prPerMonitor->rPerfMonTimer, prPerMonitor->u4UpdatePeriod);
 	}
-
-	prPerMonitor->u4CurrPerfLevel = prPerMonitor->u4TarPerfLevel;
 
 	DBGLOG(SW4, TRACE, "exit kalPerMonHandler\n");
 }

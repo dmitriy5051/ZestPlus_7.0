@@ -14,11 +14,13 @@
 #include "mt-plat/mt_hotplug_strategy.h"
 #include "gl_typedef.h"
 #include <mt_vcore_dvfs.h>
+#include "config.h"
 
 UINT_8 u1VcoreEnb = 0;
 
 INT32 kalBoostCpu(UINT_32 core_num)
 {
+#if CFG_SUPPORT_CPU_BOOST
 	UINT_32 cpu_num;
 
 	pr_warn("enter kalBoostCpu, core_num:%d\n", core_num);
@@ -38,6 +40,9 @@ INT32 kalBoostCpu(UINT_32 core_num)
 		vcorefs_request_dvfs_opp(KIR_WIFI, OPPI_UNREQ);
 		u1VcoreEnb = 0;
 	}
+#else
+	pr_warn("enter kalBoostCpu(Not SUPPORT CPU BOOST), core_num:%d\n", core_num);
+#endif
 	return 0;
 }
 

@@ -2102,9 +2102,7 @@ long mtk_disp_mgr_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		return primary_display_get_lcm_index();
 	case DISP_IOCTL_INSERT_SESSION_BUFFERS:
 		return _ioctl_insert_session_buffers(arg);
-	case DISP_IOCTL_SCREEN_FREEZE:
-		return _ioctl_screen_freeze(arg);
-	case DISP_IOCTL_AAL_EVENTCTL:
+/*	case DISP_IOCTL_AAL_EVENTCTL:
 	case DISP_IOCTL_AAL_GET_HIST:
 	case DISP_IOCTL_AAL_INIT_REG:
 	case DISP_IOCTL_AAL_SET_PARAM:
@@ -2135,8 +2133,9 @@ long mtk_disp_mgr_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	case DISP_IOCTL_PQ_GET_MDP_TDSHP_REG:
 	case DISP_IOCTL_WRITE_SW_REG:
 	case DISP_IOCTL_READ_SW_REG:
-		ret = primary_display_user_cmd(cmd, arg);
-		break;
+		//ret = primary_display_user_cmd(cmd, arg);
+		ret = 0;
+		break;*/
 	default:
 		DISPMSG("[session]ioctl not supported, 0x%08x\n", cmd);
 	}

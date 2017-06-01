@@ -547,7 +547,7 @@
 #define CFG_SUPPORT_802_11W             0
 #else
 #define CFG_ENABLE_WIFI_DIRECT          1
-#define CFG_SUPPORT_802_11W             0	/*!< 0(default): Disable 802.11W */
+#define CFG_SUPPORT_802_11W             1
 #endif
 #else
 #define CFG_ENABLE_WIFI_DIRECT              0
@@ -705,6 +705,7 @@
 
 #define CFG_SUPPORT_WFD_COMPOSE_IE          1
 
+#define CFG_SUPPORT_CPU_BOOST			0
 /*------------------------------------------------------------------------------
  * Flags of Packet Lifetime Profiling Mechanism
  *------------------------------------------------------------------------------
@@ -785,6 +786,13 @@
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
+/*Driver naming rule: Mdoule_AndroidVersion_Branch_Date_SerialNum*/
+/*Module: Gen2(0x01)/Gen3(0x02) |  kernel-3.10(x00)/3.18(0x10),kernel-4.4(0x20)*/
+/*AndroidVersion:7.0->70*/
+/*Branch: 00 for Trunk, 01->mp1,02->mp2*/
+/*Date: relase date*/
+/*Serial Number :start form 1*/
+#define WIFI_DRIVER_VERSION		"11_70_00_20161025_1"
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A

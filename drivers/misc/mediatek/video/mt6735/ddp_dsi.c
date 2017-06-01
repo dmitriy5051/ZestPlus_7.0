@@ -1232,7 +1232,7 @@ DSI_STATUS DSI_TXRX_Control(DISP_MODULE_ENUM module, cmdqRecHandle cmdq,
 	bool null_packet_en = false;
 	/*bool err_correction_en = false; */
 	bool dis_eotp_en = false;
-	bool hstx_cklp_en = false;
+	bool hstx_cklp_en = true;
 	int max_return_size = 0;
 
 	switch (lane_num) {

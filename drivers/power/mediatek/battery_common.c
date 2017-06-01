@@ -2867,7 +2867,8 @@ CHARGER_TYPE mt_charger_type_detection(void)
 	}
 #else
 #if !defined(CONFIG_MTK_DUAL_INPUT_CHARGER_SUPPORT)
-	if (BMT_status.charger_type == CHARGER_UNKNOWN) {
+	/*sanford.lin modify on 20160706 for FAQ15039*/
+	if ((BMT_status.charger_type == CHARGER_UNKNOWN) || (BMT_status.charger_type == NONSTANDARD_CHARGER)) {
 #else
 	if ((BMT_status.charger_type == CHARGER_UNKNOWN) &&
 	    (DISO_data.diso_state.cur_vusb_state == DISO_ONLINE)) {
@@ -2951,7 +2952,11 @@ static void mt_battery_charger_detect_check(void)
 		    (DISO_data.diso_state.cur_vusb_state == DISO_ONLINE)) {
 #endif
 			mt_charger_type_detection();
-
+			/*sanford.lin add start on 20160706 for FAQ15039*/
+			if (BMT_status.charger_type == NONSTANDARD_CHARGER) {
+				mt_charger_type_detection();
+			}
+			/*sanford.lin add end on 20160706 for FAQ15039*/
 			if ((BMT_status.charger_type == STANDARD_HOST)
 			    || (BMT_status.charger_type == CHARGING_HOST)) {
 				mt_usb_connect();
