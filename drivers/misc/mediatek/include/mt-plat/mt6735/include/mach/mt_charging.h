@@ -14,23 +14,39 @@
 #ifndef _CUST_BAT_H_
 #define _CUST_BAT_H_
 
+/* High battery support */
+#define HIGH_BATTERY_VOLTAGE_SUPPORT
+
 /* stop charging while in talking mode */
 #define STOP_CHARGING_IN_TAKLING
 #define TALKING_RECHARGE_VOLTAGE 3800
 #define TALKING_SYNC_TIME		   60
 
+#define BAT_LOW_TEMP_PROTECT_ENABLE
 /* Battery Temperature Protection */
 #define MTK_TEMPERATURE_RECHARGE_SUPPORT
-#define MAX_CHARGE_TEMPERATURE  50
-#define MAX_CHARGE_TEMPERATURE_MINUS_X_DEGREE	47
+#define MAX_CHARGE_TEMPERATURE  55
+#define MAX_CHARGE_TEMPERATURE_MINUS_X_DEGREE	50
 #define MIN_CHARGE_TEMPERATURE  0
-#define MIN_CHARGE_TEMPERATURE_PLUS_X_DEGREE	6
+#define MIN_CHARGE_TEMPERATURE_PLUS_X_DEGREE	5
+
 #define ERR_CHARGE_TEMPERATURE  0xFF
 
+/* sanford.lin 20150827 start battery_common.c*/
+#define MTK_VOLTAGE_RECHARGE_SUPPORT
+#define RECOVERY_CHARGING_VOLTAGE      6000
+/* sanford.lin 20150827 end*/
+
 /* Linear Charging Threshold */
-#define V_PRE2CC_THRES 3400
-#define V_CC2TOPOFF_THRES		4050
+#define V_PRE2CC_THRES	 		3400	//mV
+#define V_CC2TOPOFF_THRES		4110
+
+#ifdef HIGH_BATTERY_VOLTAGE_SUPPORT
+#define RECHARGING_VOLTAGE      4180
+#else
 #define RECHARGING_VOLTAGE      4110
+#endif
+
 #define CHARGING_FULL_CURRENT    100
 
 /* Charging Current Setting */
@@ -71,8 +87,6 @@
 //#define BATTERY_NOTIFY_CASE_0004_VBAT
 //#define BATTERY_NOTIFY_CASE_0005_TOTAL_CHARGINGTIME
 */
-/* High battery support */
-/*#define HIGH_BATTERY_VOLTAGE_SUPPORT*/
 
 /* JEITA parameter */
 /*#define MTK_JEITA_STANDARD_SUPPORT*/

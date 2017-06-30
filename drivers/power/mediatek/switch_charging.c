@@ -67,7 +67,7 @@
 /* ============================================================ // */
 /* cut off to full */
 #define POST_CHARGING_TIME (30*60)	/* 30mins */
-#define FULL_CHECK_TIMES 6
+#define FULL_CHECK_TIMES		10  //sanford.lin 6 -> 10
 
 #define STATUS_OK    0
 #define STATUS_UNSUPPORTED    -1
@@ -629,17 +629,47 @@ static unsigned int charging_full_check(void)
 	unsigned int status;
 
 	battery_charging_control(CHARGING_CMD_GET_CHARGING_STATUS, &status);
-	if (status == KAL_TRUE) {
+
+	printk(KERN_ERR"g_full_check_count=%d,status=%d,BMT_status.bat_vol=%d\n",
+		g_full_check_count,status,BMT_status.bat_vol);
+
+	if (status == KAL_TRUE)
+	{
 		g_full_check_count++;
 		if (g_full_check_count >= FULL_CHECK_TIMES)
-			return KAL_TRUE;
+		{
+			g_full_check_count = 0;
+			if(BMT_status.bat_vol < batt_cust_data.recharging_voltage)
+			{
+				status = KAL_FALSE;
+			}
+			else
+			{
+				status = KAL_TRUE;
+			}
+		}
 		else
-			return KAL_FALSE;
+		{
+			status = KAL_FALSE;
+		}
 	}
-
-	g_full_check_count = 0;
+	else
+	{
+		g_full_check_count = 0;
+	}
 	return status;
 }
+
+/* sanford.lin add start on 20161201 */
+static unsigned int recharging_check(void)
+{
+	unsigned int status;
+
+	battery_charging_control(CHARGING_CMD_GET_CHARGING_STATUS, &status);
+
+	return status;
+}
+/* sanford.lin add start on 20161201 */
 
 static bool mtk_is_pep_series_connect(void)
 {
@@ -832,11 +862,11 @@ static void mtk_select_ichg_aicr(void)
 	}
 #ifndef CONFIG_MTK_SWITCH_INPUT_OUTPUT_CURRENT_SUPPORT
 	/*sanford add on 20150908 for aeon*/
-	else if (g_bcct_flag == 1 && BMT_status.temperature > (batt_cust_data.max_charge_temperature-10)) {
+	/*else if (g_bcct_flag == 1) {
 		select_charging_current_bcct();
 		battery_log(BAT_LOG_FULL,
 			"[BATTERY] select_charging_current_bcct !\n");
-	} else {
+	} */else {
 		select_charging_current();
 		battery_log(BAT_LOG_FULL,
 			"[BATTERY] select_charging_current !\n");
@@ -1088,7 +1118,9 @@ PMU_STATUS BAT_BatteryFullAction(void)
 	 */
 	mtk_select_cv();
 
-	if (charging_full_check() == KAL_FALSE) {
+	//if (charging_full_check() == KAL_FALSE) {  //sanford.lin 20151116 for recharging bug
+	if ((BMT_status.bat_vol < batt_cust_data.recharging_voltage) || (recharging_check() == KAL_FALSE))
+	{
 		battery_log(BAT_LOG_CRTI, "[BATTERY] Battery Re-charging !!\n\r");
 
 		BMT_status.bat_in_recharging_state = KAL_TRUE;

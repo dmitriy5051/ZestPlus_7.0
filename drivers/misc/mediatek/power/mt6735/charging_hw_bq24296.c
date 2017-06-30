@@ -200,7 +200,10 @@ static unsigned int charging_hw_init(void *data)
 	mt_set_gpio_dir(GPIO_SWCHARGER_EN_PIN, GPIO_DIR_OUT);
 	mt_set_gpio_out(GPIO_SWCHARGER_EN_PIN, GPIO_OUT_ZERO);
 #endif
-
+#ifdef AEON_BCT24296_SUPPORT
+	battery_log(BAT_LOG_CRTI, "bct charging_hw_init+++ \r\n");
+	bq24296_set_ichg(0xcf); /* set charge current 1.9A */
+#else
 	bq24296_set_en_hiz(0x0);
 	bq24296_set_vindpm(0xA);	/* VIN DPM check 4.68V */
 	bq24296_set_reg_rst(0x0);
@@ -220,6 +223,7 @@ static unsigned int charging_hw_init(void *data)
 	bq24296_set_watchdog(0x1);	/* WDT 40s */
 	bq24296_set_en_timer(0x0);	/* Disable charge timer */
 	bq24296_set_int_mask(0x0);	/* Disable fault interrupt */
+#endif
 
 #ifdef CONFIG_MTK_DUAL_INPUT_CHARGER_SUPPORT
 	mt_set_gpio_mode(vin_sel_gpio_number, 0);	/* 0:GPIO mode */
@@ -343,6 +347,16 @@ static unsigned int charging_get_current(void *data)
 
 static unsigned int charging_set_current(void *data)
 {
+#ifdef AEON_BCT24296_SUPPORT
+	unsigned int status = STATUS_OK;
+	unsigned int array_size;
+
+	printk("[bctic] data = %d\r\n",*(unsigned int *) data);
+	bq24296_set_ichg(0xcf);         //modified
+	array_size = GETARRAYNUM(CS_VTH);
+
+	return status;
+#else
 	unsigned int status = STATUS_OK;
 	unsigned int set_chr_current;
 	unsigned int array_size;
@@ -355,6 +369,7 @@ static unsigned int charging_set_current(void *data)
 	bq24296_set_ichg(register_value);
 
 	return status;
+#endif
 }
 
 static unsigned int charging_set_input_current(void *data)

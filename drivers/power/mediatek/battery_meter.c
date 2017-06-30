@@ -822,16 +822,16 @@ int BattThermistorConverTemp(int Res)
 	int TBatt_Value = -200, TMP1 = 0, TMP2 = 0;
 
 	BATT_TEMPERATURE *batt_temperature_table = &Batt_Temperature_Table[g_fg_battery_id];
-
+#if defined(AEON_FOR_MALATA_DEMO) //sanford.lin
 	if (Res >= batt_temperature_table[0].TemperatureR) {
-		TBatt_Value = -20;
-	} else if (Res <= batt_temperature_table[16].TemperatureR) {
-		TBatt_Value = 60;
+		TBatt_Value = -25;
+	} else if (Res <= batt_temperature_table[18].TemperatureR) {
+		TBatt_Value = 65;
 	} else {
 		RES1 = batt_temperature_table[0].TemperatureR;
 		TMP1 = batt_temperature_table[0].BatteryTemp;
 
-		for (i = 0; i <= 16; i++) {
+		for (i = 0; i <= 18; i++) {
 			if (Res < batt_temperature_table[i].TemperatureR) {
 				RES1 = batt_temperature_table[i].TemperatureR;
 				TMP1 = batt_temperature_table[i].BatteryTemp;
@@ -844,7 +844,29 @@ int BattThermistorConverTemp(int Res)
 
 		TBatt_Value = (((Res - RES2) * TMP1) + ((RES1 - Res) * TMP2)) / (RES1 - RES2);
 	}
+#else
+	if (Res >= batt_temperature_table[0].TemperatureR) {
+		TBatt_Value = -20;
+	} else if (Res <= batt_temperature_table[17].TemperatureR) {
+		TBatt_Value = 65;
+	} else {
+		RES1 = batt_temperature_table[0].TemperatureR;
+		TMP1 = batt_temperature_table[0].BatteryTemp;
 
+		for (i = 0; i <= 17; i++) {
+			if (Res < batt_temperature_table[i].TemperatureR) {
+				RES1 = batt_temperature_table[i].TemperatureR;
+				TMP1 = batt_temperature_table[i].BatteryTemp;
+			} else {
+				RES2 = batt_temperature_table[i].TemperatureR;
+				TMP2 = batt_temperature_table[i].BatteryTemp;
+				break;
+			}
+		}
+
+		TBatt_Value = (((Res - RES2) * TMP1) + ((RES1 - Res) * TMP2)) / (RES1 - RES2);
+	}
+#endif
 	return TBatt_Value;
 }
 
@@ -944,16 +966,16 @@ int BattThermistorConverTemp(int Res)
 	int i = 0;
 	int RES1 = 0, RES2 = 0;
 	int TBatt_Value = -200, TMP1 = 0, TMP2 = 0;
-
+#if defined(AEON_FOR_MALATA_DEMO) //sanford.lin
 	if (Res >= Batt_Temperature_Table[0].TemperatureR) {
-		TBatt_Value = -20;
-	} else if (Res <= Batt_Temperature_Table[16].TemperatureR) {
-		TBatt_Value = 60;
+		TBatt_Value = -25;
+	} else if (Res <= Batt_Temperature_Table[18].TemperatureR) {
+		TBatt_Value = 65;
 	} else {
 		RES1 = Batt_Temperature_Table[0].TemperatureR;
 		TMP1 = Batt_Temperature_Table[0].BatteryTemp;
 
-		for (i = 0; i <= 16; i++) {
+		for (i = 0; i <= 18; i++) {
 			if (Res <  Batt_Temperature_Table[i].TemperatureR) {
 				RES1 = Batt_Temperature_Table[i].TemperatureR;
 				TMP1 = Batt_Temperature_Table[i].BatteryTemp;
@@ -967,7 +989,30 @@ int BattThermistorConverTemp(int Res)
 
 		TBatt_Value = (((Res - RES2) * TMP1) + ((RES1 - Res) * TMP2)) / (RES1 - RES2);
 	}
+#else
+	if (Res >= Batt_Temperature_Table[0].TemperatureR) {
+		TBatt_Value = -20;
+	} else if (Res <= Batt_Temperature_Table[17].TemperatureR) {
+		TBatt_Value = 65;
+	} else {
+		RES1 = Batt_Temperature_Table[0].TemperatureR;
+		TMP1 = Batt_Temperature_Table[0].BatteryTemp;
 
+		for (i = 0; i <= 17; i++) {
+			if (Res <  Batt_Temperature_Table[i].TemperatureR) {
+				RES1 = Batt_Temperature_Table[i].TemperatureR;
+				TMP1 = Batt_Temperature_Table[i].BatteryTemp;
+
+			} else {
+				RES2 = Batt_Temperature_Table[i].TemperatureR;
+				TMP2 = Batt_Temperature_Table[i].BatteryTemp;
+				break;
+			}
+		}
+
+		TBatt_Value = (((Res - RES2) * TMP1) + ((RES1 - Res) * TMP2)) / (RES1 - RES2);
+	}
+#endif
 	return TBatt_Value;
 }
 
@@ -1112,6 +1157,13 @@ int force_get_tbat(kal_bool update)
 		bat_temperature_volt = 2;
 		ret =
 		    battery_meter_ctrl(BATTERY_METER_CMD_GET_ADC_V_BAT_TEMP, &bat_temperature_volt);
+
+		/* sanford.lin add on 20160316 for aeon*/
+		if (bat_temperature_volt > 1700)
+		{
+		    battery_log(BAT_LOG_CRTI, "[force_get_tbat] Battery is not exist, fixed TBAT=-20 t\n");
+		    return -19;
+		}
 
 		if (bat_temperature_volt != 0) {
 #if defined(SOC_BY_HW_FG)
@@ -1882,7 +1934,7 @@ void dod_init(void)
 
 	bm_print(BM_LOG_CRTI, "[FGADC] get_hw_ocv=%d, HW_SOC=%d, SW_SOC = %d\n",
 		 gFG_voltage, gFG_capacity_by_v, gFG_capacity_by_v_init);
-#if defined(EXTERNAL_SWCHR_SUPPORT)
+#if 0 //defined(EXTERNAL_SWCHR_SUPPORT)  //zhaolong modified on 20160115
 	/* compare with hw_ocv & sw_ocv, check if less than or equal to 5% tolerance */
 	if ((abs(gFG_capacity_by_v_init - gFG_capacity_by_v) > 5)
 	    && (bat_is_charger_exist() == KAL_TRUE)) {

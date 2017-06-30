@@ -30,8 +30,13 @@
   *   [I2C Slave Setting]
   *
   *********************************************************/
+#ifdef AEON_BCT24296_SUPPORT
+#define bq24296_SLAVE_ADDR_WRITE   0x5A
+#define bq24296_SLAVE_ADDR_READ    0x5B
+#else
 #define bq24296_SLAVE_ADDR_WRITE   0xD6
 #define bq24296_SLAVE_ADDR_READ    0xD7
+#endif
 
 static struct i2c_client *new_client;
 static const struct i2c_device_id bq24296_i2c_id[] = { {"bq24296", 0}, {} };
@@ -88,6 +93,12 @@ int bq24296_read_byte(unsigned char cmd, unsigned char *returnData)
 	    ((new_client->ext_flag) & I2C_MASK_FLAG) | I2C_WR_FLAG | I2C_DIRECTION_FLAG;
 
 	cmd_buf[0] = cmd;
+
+#ifdef AEON_BCT24296_SUPPORT
+	new_client->addr = (bq24296_SLAVE_ADDR_READ >> 1);
+	printk("bct addr = 0x%x \r\n",new_client->addr);
+#endif
+
 	ret = i2c_master_send(new_client, &cmd_buf[0], (1 << 8 | 1));
 	if (ret < 0) {
 		/* new_client->addr = new_client->addr & I2C_MASK_FLAG; */
@@ -118,7 +129,10 @@ int bq24296_write_byte(unsigned char cmd, unsigned char writeData)
 	write_data[1] = writeData;
 
 	new_client->ext_flag = ((new_client->ext_flag) & I2C_MASK_FLAG) | I2C_DIRECTION_FLAG;
-
+#ifdef AEON_BCT24296_SUPPORT
+	new_client->addr = (bq24296_SLAVE_ADDR_WRITE >> 1);
+	printk("bct addr = 0x%x \r\n",new_client->addr);
+#endif
 	ret = i2c_master_send(new_client, write_data, 2);
 	if (ret < 0) {
 		new_client->ext_flag = 0;
@@ -303,11 +317,17 @@ void bq24296_set_boost_lim(unsigned int val)
 void bq24296_set_ichg(unsigned int val)
 {
 	unsigned int ret = 0;
-
+#ifdef AEON_BCT24296_SUPPORT
+	printk("bct bq24296_set_ichg val =%d \r\n",val);
+	
+	ret = bq24296_reg_config_interface(0x02,0x8f);
+	ret = bq24296_reg_config_interface(0x03,0x5c);
+#else
 	ret = bq24296_config_interface((unsigned char) (bq24296_CON2),
 				       (unsigned char) (val),
 				       (unsigned char) (CON2_ICHG_MASK), (unsigned char) (CON2_ICHG_SHIFT)
 	    );
+#endif
 }
 
 void bq24296_set_bcold(unsigned int val)

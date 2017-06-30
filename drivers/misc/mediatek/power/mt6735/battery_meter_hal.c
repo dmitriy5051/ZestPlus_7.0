@@ -67,12 +67,9 @@ void get_hw_chip_diff_trim_value(void)
 #else
 
 #if 1
-	signed int reg_val = 0;
+	chip_diff_trim_value_4_0 = 0;
 
-	reg_val = upmu_get_reg_value(0xCB8);
-	chip_diff_trim_value_4_0 = (reg_val >> 7) & 0x001F;	/* chip_diff_trim_value_4_0 = (reg_val>>10)&0x001F; */
-
-	bm_print(BM_LOG_CRTI, "[Chip_Trim] Reg[0xCB8]=0x%x, chip_diff_trim_value_4_0=%d\n", reg_val,
+	bm_print(BM_LOG_CRTI, "[Chip_Trim] chip_diff_trim_value_4_0=%d\n",
 		 chip_diff_trim_value_4_0);
 #else
 	bm_print(BM_LOG_FULL, "[Chip_Trim] need check reg number\n");

@@ -109,6 +109,11 @@
 #if defined(CONFIG_MTK_PUMP_EXPRESS_PLUS_SUPPORT)
 #include <mach/mt_pe.h>
 #endif
+
+#ifdef CONFIG_MTK_OZ1C105C_SUPPORT  //sanford.lin
+extern int32_t bluewhale_cable_out_config_extern(void);
+#endif
+
 /* ////////////////////////////////////////////////////////////////////////////// */
 /* Battery Logging Entry */
 /* ////////////////////////////////////////////////////////////////////////////// */
@@ -165,6 +170,7 @@ int g_platform_boot_mode = 0;
 struct timespec g_bat_time_before_sleep;
 int g_smartbook_update = 0;
 int cable_in_uevent = 0;
+kal_bool aeon_VBatTemp_is_error = KAL_FALSE;
 
 #if defined(CONFIG_MTK_DUAL_INPUT_CHARGER_SUPPORT)
 kal_bool g_vcdt_irq_delay_flag = 0;
@@ -1982,7 +1988,7 @@ static void battery_update(struct battery_data *bat_data)
 			battery_log(BAT_LOG_CRTI, "[DLPT_POWER_OFF_EN] SOC=%d to power off\n",
 				    bat_data->BAT_CAPACITY);
 			if (cnt >= 2)
-				kernel_restart("DLPT reboot system");
+				orderly_reboot(true);
 
 		} else
 			cnt = 0;
@@ -2187,7 +2193,11 @@ PMU_STATUS do_batt_temp_state_machine(void)
 
 
 	if (batt_cust_data.bat_low_temp_protect_enable) {
+#if defined(AEON_FOR_MALATA_DEMO) //sanford.lin
+		if (BMT_status.temperature < -5) {
+#else
 		if (BMT_status.temperature < batt_cust_data.min_charge_temperature) {
+#endif
 			battery_log(BAT_LOG_CRTI,
 				    "[BATTERY] Battery Under Temperature or NTC fail !!\n\r");
 			g_batt_temp_status = TEMP_POS_LOW;
@@ -2200,6 +2210,7 @@ PMU_STATUS do_batt_temp_state_machine(void)
 					    batt_cust_data.min_charge_temperature,
 					    BMT_status.temperature,
 					    batt_cust_data.min_charge_temperature_plus_x_degree);
+				aeon_VBatTemp_is_error = KAL_FALSE;
 				g_batt_temp_status = TEMP_POS_NORMAL;
 				BMT_status.bat_charging_state = CHR_PRE;
 				return PMU_STATUS_OK;
@@ -2209,7 +2220,11 @@ PMU_STATUS do_batt_temp_state_machine(void)
 		}
 	}
 
+#if defined(AEON_FOR_MALATA_DEMO) //sanford.lin
+	if (BMT_status.temperature >= 60) {
+#else
 	if (BMT_status.temperature >= batt_cust_data.max_charge_temperature) {
+#endif
 		battery_log(BAT_LOG_CRTI, "[BATTERY] Battery Over Temperature !!\n\r");
 		g_batt_temp_status = TEMP_POS_HIGH;
 		return PMU_STATUS_FAIL;
@@ -2219,6 +2234,7 @@ PMU_STATUS do_batt_temp_state_machine(void)
 				    "[BATTERY] Battery Temperature down from %d to %d(%d), allow charging!!\n\r",
 				    batt_cust_data.max_charge_temperature, BMT_status.temperature,
 				    batt_cust_data.max_charge_temperature_minus_x_degree);
+			aeon_VBatTemp_is_error = KAL_FALSE;
 			g_batt_temp_status = TEMP_POS_NORMAL;
 			BMT_status.bat_charging_state = CHR_PRE;
 			return PMU_STATUS_OK;
@@ -2478,14 +2494,24 @@ static PMU_STATUS mt_battery_CheckBatteryTemp(void)
 		}
 	} else {
 #ifdef BAT_LOW_TEMP_PROTECT_ENABLE
+#if defined(AEON_FOR_MALATA_DEMO) //sanford.lin
+		if ((BMT_status.temperature < -5)
+		    || (BMT_status.temperature == ERR_CHARGE_TEMPERATURE)) {
+#else
 		if ((BMT_status.temperature < MIN_CHARGE_TEMPERATURE)
 		    || (BMT_status.temperature == ERR_CHARGE_TEMPERATURE)) {
+#endif
 			battery_log(BAT_LOG_CRTI,
 				    "[BATTERY] Battery Under Temperature or NTC fail !!\n\r");
 			status = PMU_STATUS_FAIL;
 		}
 #endif
+
+#if defined(AEON_FOR_MALATA_DEMO) //sanford.lin
+		if (BMT_status.temperature >= 60) {
+#else
 		if (BMT_status.temperature >= MAX_CHARGE_TEMPERATURE) {
+#endif
 			battery_log(BAT_LOG_CRTI, "[BATTERY] Battery Over Temperature !!\n\r");
 			status = PMU_STATUS_FAIL;
 		}
@@ -2523,6 +2549,18 @@ static PMU_STATUS mt_battery_CheckChargerVoltage(void)
 			BMT_status.bat_charging_state = CHR_ERROR;
 			status = PMU_STATUS_FAIL;
 		}
+
+	/* sanford.lin 20160307 add start for recovery changing*/
+	#ifdef MTK_VOLTAGE_RECHARGE_SUPPORT
+		if((BMT_status.charger_protect_status == charger_OVER_VOL) && (BMT_status.charger_vol <= RECOVERY_CHARGING_VOLTAGE))
+		{
+			battery_xlog_printk(BAT_LOG_CRTI, "[BATTERY] recovery charging afer over voltage !! \r\n");
+			BMT_status.charger_protect_status = 0;
+			BMT_status.bat_charging_state = CHR_PRE;
+			status = PMU_STATUS_OK;
+		}
+	#endif
+	/* sanford.lin 20160307 add end*/
 	}
 
 	return status;
@@ -2666,9 +2704,19 @@ static void mt_battery_notify_ICharging_check(void)
 
 static void mt_battery_notify_VBatTemp_check(void)
 {
+#if defined(AEON_FOR_MALATA_DEMO) || defined(AEON_FOR_MALATA) //sanford.lin
+	if (BMT_status.charger_exist == KAL_TRUE)
+	{
+#endif
 #if defined(BATTERY_NOTIFY_CASE_0002_VBATTEMP)
-
+#if defined(AEON_FOR_MALATA_DEMO) //sanford.lin
+	if (BMT_status.temperature >= 55) {
+#elif defined(AEON_FOR_MALATA)
+	if (BMT_status.temperature >= batt_cust_data.max_charge_temperature - 5) {
+#else
 	if (BMT_status.temperature >= batt_cust_data.max_charge_temperature) {
+#endif
+		aeon_VBatTemp_is_error = KAL_TRUE;
 		g_BatteryNotifyCode |= 0x0002;
 		battery_log(BAT_LOG_CRTI, "[BATTERY] bat_temp(%d) out of range(too high)\n",
 			    BMT_status.temperature);
@@ -2681,12 +2729,46 @@ static void mt_battery_notify_VBatTemp_check(void)
 	}
 #else
 #ifdef BAT_LOW_TEMP_PROTECT_ENABLE
+#if defined(AEON_FOR_MALATA_DEMO) //sanford.lin
+	else if (BMT_status.temperature < 0) {
+#elif defined(AEON_FOR_MALATA)
+	else if (BMT_status.temperature < MIN_CHARGE_TEMPERATURE + 5) {
+#else
 	else if (BMT_status.temperature < MIN_CHARGE_TEMPERATURE) {
+#endif
+		aeon_VBatTemp_is_error = KAL_TRUE;
 		g_BatteryNotifyCode |= 0x0020;
 		battery_log(BAT_LOG_CRTI, "[BATTERY] bat_temp(%d) out of range(too low)\n",
 			    BMT_status.temperature);
 	}
 #endif
+#endif
+#if defined(AEON_FOR_MALATA_DEMO) //sanford.lin
+	} else {
+		if (BMT_status.temperature >= 60) {
+			g_BatteryNotifyCode |= 0x0040;
+			battery_log(BAT_LOG_CRTI, "[BATTERY] malata_bat_temp(%d) out of range(too high)\n",
+						BMT_status.temperature);
+		}
+		else if (BMT_status.temperature <= -20) {
+			g_BatteryNotifyCode |= 0x0080;
+			battery_log(BAT_LOG_CRTI, "[BATTERY] bat_temp(%d) out of range(too low)\n",
+						BMT_status.temperature);
+		}
+	}
+#elif defined(AEON_FOR_MALATA) //sanford.lin
+	} else {
+		if (BMT_status.temperature >= 50) {
+			g_BatteryNotifyCode |= 0x0040;
+			battery_log(BAT_LOG_CRTI, "[BATTERY] malata_bat_temp(%d) out of range(too high)\n",
+						BMT_status.temperature);
+		}
+		else if (BMT_status.temperature <= -10) {
+			g_BatteryNotifyCode |= 0x0080;
+			battery_log(BAT_LOG_CRTI, "[BATTERY] bat_temp(%d) out of range(too low)\n",
+						BMT_status.temperature);
+		}
+	}
 #endif
 
 	battery_log(BAT_LOG_FULL, "[BATTERY] BATTERY_NOTIFY_CASE_0002_VBATTEMP (%x)\n",
@@ -2782,7 +2864,13 @@ static void mt_battery_thermal_check(void)
 #if defined(CONFIG_MTK_JEITA_STANDARD_SUPPORT)
 		/* ignore default rule */
 #else
-		if (BMT_status.temperature >= 60) {
+	#if defined(AEON_FOR_MALATA_DEMO) //sanford.lin
+		if ((BMT_status.temperature <= -25) || (BMT_status.temperature >= 65)) {
+	#elif defined(AEON_FOR_MALATA) //sanford.lin
+		if ((BMT_status.temperature <= -20) || (BMT_status.temperature >= 60)) {
+	#else
+		if (BMT_status.temperature >= 65) {
+	#endif
 #if defined(CONFIG_POWER_EXT)
 			battery_log(BAT_LOG_CRTI,
 				    "[BATTERY] CONFIG_POWER_EXT, no update battery update power down.\n");
@@ -2790,7 +2878,12 @@ static void mt_battery_thermal_check(void)
 			{
 				if ((g_platform_boot_mode == META_BOOT)
 				    || (g_platform_boot_mode == ADVMETA_BOOT)
-				    || (g_platform_boot_mode == ATE_FACTORY_BOOT)) {
+				    || (g_platform_boot_mode == ATE_FACTORY_BOOT)
+                                    || (g_platform_boot_mode == KERNEL_POWER_OFF_CHARGING_BOOT) 
+				#if defined(AEON_FOR_MALATA_DEMO) || defined(AEON_FOR_MALATA) //sanford.lin
+					|| (g_platform_boot_mode == KERNEL_POWER_OFF_CHARGING_BOOT)
+				#endif
+				){
 					battery_log(BAT_LOG_FULL,
 						    "[BATTERY] boot mode = %d, bypass temperature check\n",
 						    g_platform_boot_mode);
@@ -2806,14 +2899,10 @@ static void mt_battery_thermal_check(void)
 
 					power_supply_changed(bat_psy);
 
-					if (BMT_status.charger_exist == KAL_TRUE) {
-						/* can not power down due to charger exist, so need reset system */
-						battery_charging_control
-						    (CHARGING_CMD_SET_PLATFORM_RESET, NULL);
-					}
-					/* avoid SW no feedback */
-					battery_charging_control(CHARGING_CMD_SET_POWER_OFF, NULL);
-					/* mt_power_off(); */
+					if (BMT_status.charger_exist == KAL_TRUE)
+						orderly_reboot(true);
+					else
+						orderly_poweroff(true);
 				}
 			}
 #endif
@@ -3020,7 +3109,7 @@ static void mt_kpoc_power_off_check(void)
 		if ((upmu_is_chr_det() == KAL_FALSE) && (BMT_status.charger_vol < 2500)) {	/* vbus < 2.5V */
 			battery_log(BAT_LOG_CRTI,
 				    "[bat_thread_kthread] Unplug Charger/USB In Kernel Power Off Charging Mode!  Shutdown OS!\r\n");
-			battery_charging_control(CHARGING_CMD_SET_POWER_OFF, NULL);
+			orderly_poweroff(true);
 		}
 	}
 #endif
@@ -3073,7 +3162,9 @@ void do_chrdet_int_task(void)
 		} else {
 			battery_log(BAT_LOG_CRTI, "[do_chrdet_int_task] charger NOT exist!\n");
 			BMT_status.charger_exist = KAL_FALSE;
-
+		#ifdef CONFIG_MTK_OZ1C105C_SUPPORT  //sanford.lin
+			bluewhale_cable_out_config_extern();
+		#endif
 #if defined(CONFIG_MTK_DUAL_INPUT_CHARGER_SUPPORT)
 			battery_log(BAT_LOG_CRTI,
 				    "turn off charging for no available charging source\n");
@@ -3523,9 +3614,9 @@ void check_battery_exist(void)
 
 			battery_charging_control(CHARGING_CMD_ENABLE, &charging_enable);
 			#ifdef CONFIG_MTK_POWER_PATH_MANAGEMENT_SUPPORT
-			battery_charging_control(CHARGING_CMD_SET_PLATFORM_RESET, NULL);
+			orderly_reboot(true);
 			#else
-			battery_charging_control(CHARGING_CMD_SET_POWER_OFF, NULL);
+			orderly_poweroff(true);
 			#endif
 		}
 	}
@@ -3630,7 +3721,7 @@ void hv_sw_mode(void)
 int charger_hv_detect_sw_thread_handler(void *unused)
 {
 	ktime_t ktime;
-	unsigned int hv_voltage = batt_cust_data.v_charger_max * 1000;
+	unsigned int hv_voltage = 7000*1000;  //sanford.lin batt_cust_data.v_charger_max * 1000;
 
 
 	unsigned char cnt = 0;
@@ -3694,7 +3785,7 @@ int charger_hv_detect_sw_thread_handler(void *unused)
 {
 	ktime_t ktime;
 	unsigned int charging_enable;
-	unsigned int hv_voltage = batt_cust_data.v_charger_max * 1000;
+	unsigned int hv_voltage = 7000*1000;  //sanford.lin batt_cust_data.v_charger_max * 1000;
 	kal_bool hv_status;
 
 #if defined(CONFIG_MTK_DUAL_INPUT_CHARGER_SUPPORT)

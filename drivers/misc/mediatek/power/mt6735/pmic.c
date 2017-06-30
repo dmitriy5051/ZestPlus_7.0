@@ -108,6 +108,10 @@
 
 #include "mt_devinfo.h"
 
+#ifdef CONFIG_MTK_OZ1C105C_SUPPORT  //sanford.lin
+extern int32_t bluewhale_cable_out_config_extern(void);
+#endif
+
 /*****************************************************************************
  * PMIC extern variable
  ******************************************************************************/
@@ -3199,6 +3203,9 @@ void chrdet_int_handler(void)
 		if (boot_mode == KERNEL_POWER_OFF_CHARGING_BOOT
 		    || boot_mode == LOW_POWER_OFF_CHARGING_BOOT) {
 			PMICLOG("[chrdet_int_handler] Unplug Charger/USB\n");
+		#ifdef CONFIG_MTK_OZ1C105C_SUPPORT  //sanford.lin
+			bluewhale_cable_out_config_extern();
+		#endif
 			mt_power_off();
 		}
 	}
@@ -3926,7 +3933,7 @@ void PMIC_INIT_SETTING_V1(void)
 		ret = pmic_config_interface(0xEA6, 0x1, 0x3, 4);
 		ret = pmic_config_interface(0xEA6, 0x1, 0x3, 6);
 		ret = pmic_config_interface(0xEB8, 0x1, 0x1, 14);
-		ret = pmic_config_interface(0xF4A, 0xF, 0xF, 4);
+		ret = pmic_config_interface(0xF4A, 0xB, 0xF, 4);
 		ret = pmic_config_interface(0xF54, 0x0, 0x7, 1);
 		ret = pmic_config_interface(0xF62, 0x3, 0xF, 0);
 		ret = pmic_config_interface(0xF6C, 0x2, 0x1F, 0);
@@ -3953,8 +3960,6 @@ void PMIC_INIT_SETTING_V1(void)
 		ret = pmic_config_interface(0xC, 0x1, 0x1, 12);
 		ret = pmic_config_interface(0xC, 0x1, 0x1, 13);
 		ret = pmic_config_interface(0x10, 0x1, 0x1, 5);
-		ret = pmic_config_interface(0x14, 0x1, 0x1, 5);
-		ret = pmic_config_interface(0x14, 0x1, 0x1, 7);
 		ret = pmic_config_interface(0x16, 0x1, 0x1, 0);
 		ret = pmic_config_interface(0x16, 0x1, 0x1, 1);
 		ret = pmic_config_interface(0x1E, 0x0, 0x1, 11);
@@ -3970,8 +3975,6 @@ void PMIC_INIT_SETTING_V1(void)
 		ret = pmic_config_interface(0x248, 0x1, 0x1, 13);
 		ret = pmic_config_interface(0x248, 0x1, 0x1, 14);
 		ret = pmic_config_interface(0x25A, 0x1, 0x1, 9);
-		ret = pmic_config_interface(0x25A, 0x0, 0x1, 10);
-		ret = pmic_config_interface(0x278, 0x0, 0x1, 11);
 		ret = pmic_config_interface(0x40E, 0x0, 0x3, 2);
 		ret = pmic_config_interface(0x412, 0x0, 0x3, 2);
 		ret = pmic_config_interface(0x420, 0x1, 0x1, 4);
@@ -4061,14 +4064,7 @@ void PMIC_INIT_SETTING_V1(void)
 		ret = pmic_config_interface(0xEA6, 0x1, 0x3, 4);
 		ret = pmic_config_interface(0xEA6, 0x1, 0x3, 6);
 		ret = pmic_config_interface(0xEB8, 0x1, 0x1, 14);
-		ret = pmic_config_interface(0xF08, 0xC, 0x3FF, 0);
-		ret = pmic_config_interface(0xF08, 0x0, 0x1, 15);
-		ret = pmic_config_interface(0xF0E, 0xC, 0x3FF, 0);
-		ret = pmic_config_interface(0xF0E, 0x1, 0x1, 15);
-		ret = pmic_config_interface(0xF12, 0x0, 0x1, 0);
-		ret = pmic_config_interface(0xF12, 0x0, 0x1, 1);
-		ret = pmic_config_interface(0xF12, 0x1, 0x1, 2);
-		ret = pmic_config_interface(0xF4A, 0xF, 0xF, 4);
+		ret = pmic_config_interface(0xF4A, 0xB, 0xF, 4);
 		ret = pmic_config_interface(0xF54, 0x0, 0x7, 1);
 		ret = pmic_config_interface(0xF62, 0x3, 0xF, 0);
 		ret = pmic_config_interface(0xF6C, 0x2, 0x1F, 0);
@@ -4077,9 +4073,8 @@ void PMIC_INIT_SETTING_V1(void)
 		ret = pmic_config_interface(0xF7A, 0x1, 0x1, 2);
 		ret = pmic_config_interface(0xF7A, 0x1, 0x1, 6);
 		ret = pmic_config_interface(0xF7A, 0x1, 0x1, 7);
-#if 0
+
 		pmic_setting_for_co_tsx();
-#endif
 	}
 	/*--------------------------------------------------------*/
 

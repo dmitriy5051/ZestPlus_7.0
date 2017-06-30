@@ -1124,12 +1124,12 @@ static void pchr_turn_on_charging(void)
 			battery_log(BAT_LOG_FULL,
 				    "USB_CURRENT_UNLIMITED, use AC_CHARGER_CURRENT\n");
 		} else {
-			/*sanford add on 20150908 for aeon*/
-			if (g_bcct_flag == 1 && BMT_status.temperature > (batt_cust_data.max_charge_temperature-10)) {
+		/*sanford add on 20150908 for aeon*/
+			/*if (g_bcct_flag == 1) {
 				battery_log(BAT_LOG_FULL,
 					    "[BATTERY] select_charging_curret_bcct !\n");
 				select_charging_curret_bcct();
-			} else {
+			} else */{
 				battery_log(BAT_LOG_FULL, "[BATTERY] select_charging_current !\n");
 				select_charging_curret();
 			}
