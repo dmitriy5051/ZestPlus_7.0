@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2015 MediaTek Inc.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 #ifndef _CUST_BATTERY_METER_TABLE_H
 #define _CUST_BATTERY_METER_TABLE_H
 
@@ -5,14 +18,14 @@
 #define BAT_NTC_47 0
 
 #if (BAT_NTC_10 == 1)
-#define RBAT_PULL_UP_R    16900
+#define RBAT_PULL_UP_R             16900
 #endif
 
 #if (BAT_NTC_47 == 1)
-#define RBAT_PULL_UP_R    61900
+#define RBAT_PULL_UP_R             61900
 #endif
 
-#define RBAT_PULL_UP_VOLT 1800
+#define RBAT_PULL_UP_VOLT          1800
 
 typedef struct _BATTERY_PROFILE_STRUCT {
 	signed int percentage;
@@ -98,7 +111,6 @@ typedef enum {
         { 60,11210}
     };
 #endif
-
 
 /* T0 -10C */
 BATTERY_PROFILE_STRUCT battery_profile_t0[] =
@@ -449,7 +461,6 @@ BATTERY_PROFILE_STRUCT battery_profile_temperature[] =
 	{0  , 0 },
 	{0  , 0 }
 };
-
 
 /* T0 -10C */
 R_PROFILE_STRUCT r_profile_t0[] =

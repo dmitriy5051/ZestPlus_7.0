@@ -1,8 +1,21 @@
+/*
+ * Copyright (C) 2015 MediaTek Inc.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 #ifndef _CUST_BAT_H_
 #define _CUST_BAT_H_
 
 /* High battery support */
-#define HIGH_BATTERY_VOLTAGE_SUPPORT
+//#define HIGH_BATTERY_VOLTAGE_SUPPORT
 
 /* stop charging while in talking mode */
 #define STOP_CHARGING_IN_TAKLING
@@ -18,10 +31,10 @@
 #define MIN_CHARGE_TEMPERATURE_PLUS_X_DEGREE	5
 #define ERR_CHARGE_TEMPERATURE  0xFF
 
-/* linxf 20150827 start battery_common.c*/
+/* sanford.lin 20150827 start battery_common.c*/
 #define MTK_VOLTAGE_RECHARGE_SUPPORT
 #define RECOVERY_CHARGING_VOLTAGE      6000
-/* linxf 20150827 end*/
+/* sanford.lin 20150827 end*/
 
 /* Linear Charging Threshold */
 #define V_PRE2CC_THRES	 		3400	//mV
@@ -33,7 +46,7 @@
 #define RECHARGING_VOLTAGE      4110
 #endif
 
-#define CHARGING_FULL_CURRENT    100	//mA
+#define CHARGING_FULL_CURRENT    100
 
 /* Charging Current Setting */
 #define USB_CHARGER_CURRENT_SUSPEND			0
