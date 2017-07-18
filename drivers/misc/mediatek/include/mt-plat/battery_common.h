@@ -21,7 +21,7 @@
  *  BATTERY VOLTAGE
  ****************************************************************************/
 #define PRE_CHARGE_VOLTAGE                  (3200)
-#define SYSTEM_OFF_VOLTAGE                  (3400)
+#define SYSTEM_OFF_VOLTAGE                  (3350)
 #define CONSTANT_CURRENT_CHARGE_VOLTAGE     (4100)
 #define CONSTANT_VOLTAGE_CHARGE_VOLTAGE     (4200)
 #define CV_DROPDOWN_VOLTAGE                 (4000)
@@ -47,11 +47,7 @@
 
 
 #define MUTEX_TIMEOUT                       (5000)
-#ifdef BAT_TASK_PERIOD_SECOND
-	#define BAT_TASK_PERIOD                     (BAT_TASK_PERIOD_SECOND)
-#else
-	#define BAT_TASK_PERIOD                     (10)
-#endif
+#define BAT_TASK_PERIOD                     (10)/* 10sec */
 #define g_free_bat_temp					(100)0	/* 1 s */
 
 /*****************************************************************************
