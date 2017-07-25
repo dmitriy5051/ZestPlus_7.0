@@ -15,7 +15,7 @@
 #define _CUST_BAT_H_
 
 /* High battery support */
-//#define HIGH_BATTERY_VOLTAGE_SUPPORT
+#define HIGH_BATTERY_VOLTAGE_SUPPORT
 
 /* stop charging while in talking mode */
 #define STOP_CHARGING_IN_TAKLING
