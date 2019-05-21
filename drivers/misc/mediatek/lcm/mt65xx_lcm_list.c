@@ -99,6 +99,14 @@ unsigned char lcm_name_list[][128] = {
 	"hx8392a_vdo_cmd",
 #endif
 
+#if defined(ILI9881C_DSI_VDO_HD720_LD_ZAL1506)
+	&ili9881c_dsi_vdo_hd720_ld_zal1506_lcm_drv,
+#endif
+
+#if defined(HX8394F_DSI_VDO_HD720_BY_ZAL1506)
+	&hx8394f_dsi_vdo_hd720_by_zal1506_lcm_drv,
+#endif
+	
 #if defined(HX8392A_DSI_CMD_FWVGA)
 	"hx8392a_dsi_cmd_fwvga",
 #endif
