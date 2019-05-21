@@ -1,16 +1,3 @@
-/*
-* Copyright (C) 2016 MediaTek Inc.
-*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License version 2 as
-* published by the Free Software Foundation.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-* See http://www.gnu.org/licenses/gpl-2.0.html for more details.
-*/
-
 #ifndef __TPD_H
 #define __TPD_H
 #include <linux/init.h>
@@ -30,15 +17,14 @@
 #include <linux/kobject.h>
 #include <linux/regulator/consumer.h>
 
-
 /*debug macros */
 /*#define TPD_DEBUG */
 #define TPD_DEBUG_CODE
 /* #define TPD_DEBUG_TRACK */
-#define TPD_DMESG(a, arg...) pr_info(TPD_DEVICE ": " a, ##arg)
+#define TPD_DMESG(a, arg...) pr_debug(TPD_DEVICE ": " a, ##arg)
 #if defined(TPD_DEBUG)
 #undef TPD_DEBUG
-#define TPD_DEBUG(a, arg...) pr_info(TPD_DEVICE ": " a, ##arg)
+#define TPD_DEBUG(a, arg...) pr_debug(TPD_DEVICE ": " a, ##arg)
 #else
 #define TPD_DEBUG(arg...)
 #endif
@@ -101,6 +87,12 @@ struct tpd_device {
 	struct timer_list timer;
 	struct tasklet_struct tasklet;
 	int btn_state;
+	char *hq_ctp_module_name; //kaka_12_0110
+        char *hq_ctp_module_id; 
+	char *touch_num;
+	#ifdef CONFIG_TOUCHSCREEN_MTK_HQ_GESTURE
+	int gesture_enable;
+	#endif
 };
 struct tpd_key_dim_local {
 	int key_x;
@@ -155,14 +147,13 @@ void tpd_button_setting(int keycnt, void *keys, void *keys_dim);
 extern int tpd_em_spl_num;
 extern int tpd_em_pressure_threshold;
 extern struct tpd_device *tpd;
+extern struct tpd_driver_t *g_tpd_drv;
 extern void tpd_get_dts_info(void);
 #define GTP_RST_PORT    0
 #define GTP_INT_PORT    1
 extern void tpd_gpio_as_int(int pin);
 extern void tpd_gpio_output(int pin, int level);
 extern struct of_device_id touch_of_match[];
-extern  int   tpd_device_init(void);
-extern void  tpd_device_exit(void);
 #ifdef TPD_DEBUG_CODE
 #include "tpd_debug.h"
 #endif

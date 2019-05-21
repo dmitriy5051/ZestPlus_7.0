@@ -12,8 +12,7 @@ menuconfig INPUT_TOUCHSCREEN
 if INPUT_TOUCHSCREEN
 
 config TOUCHSCREEN_MTK
-	tristate "MediaTek Touch Panel Driver"
-	default n
+	bool "MediaTek Touch Panel Driver"
 	help
 	  Say Y here if you have MediaTek touch panel.
 
@@ -22,10 +21,7 @@ config TOUCHSCREEN_MTK
 	  To compile this dirver as a module, choose M here: the
 	  module will be called.
 
-source "drivers/input/touchscreen/mediatek/GT1151/Kconfig"
-
-
-config TOUCHSCREEN_MTK_GT1151TB
+config TOUCHSCREEN_MTK_GT1151
 	bool "GT1151 for Mediatek package"
 	default n
 	help
@@ -36,7 +32,25 @@ config TOUCHSCREEN_MTK_GT1151TB
 	  To compile this dirver as a module, choose M here: the
 	  module will be called.
 
-source "drivers/input/touchscreen/mediatek/GT1151TB/Kconfig"
+source "drivers/input/touchscreen/mediatek/GT1151/Kconfig"
+
+config TOUCHSCREEN_MTK_HX8527
+	bool "HX8527 for Mediatek package"
+	default n
+
+config TOUCHSCREEN_MTK_FT3427
+	bool "FT3427 for Mediatek package"
+	default n
+
+config TOUCHSCREEN_TMK_HX8527
+	bool "himax8527 for Mediatek package"
+	default n
+			
+config TOUCHSCREEN_MTK_HQ_GESTURE
+        bool "huaqin gesture ctl"
+        default n
+
+
 
 config TOUCHSCREEN_MTK_GT928
 	tristate "GT928 Touchscreen"
@@ -45,12 +59,11 @@ config TOUCHSCREEN_MTK_GT928
 	  connected to your system.
 	  If unsure, say N.
 	  To compile this driver as a module, choose M here.
-
 config TOUCHSCREEN_MTK_GT9XXTB_HOTKNOT
 	bool "GT9XXTB hotknot for Mediatek package"
 	default n
 	help
-	  Say Y here if you have GT9XXTB hotknot touch panel.
+	  Say Y here if you have GT9xx touch panel.
 
 	  If unsure, say N.
 
@@ -58,32 +71,6 @@ config TOUCHSCREEN_MTK_GT9XXTB_HOTKNOT
 	  module will be called.
 
 source "drivers/input/touchscreen/mediatek/GT9XXTB_hotknot/Kconfig"
-
-config TOUCHSCREEN_MTK_GT9XX_HOTKNOT
-	bool "GT9XX hotknot for Mediatek package"
-	default n
-	help
-	  Say Y here if you have GT9XX hotknot touch panel.
-
-	  If unsure, say N.
-
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-
-source "drivers/input/touchscreen/mediatek/GT9XX_hotknot/Kconfig"
-
-config TOUCHSCREEN_MTK_GT9XX_HOTKNOT_PHONE
-	bool "GT9XX hotknot phone for Mediatek package"
-	default n
-	help
-	  Say Y here if you have GT9XX hotknot phone touch panel.
-
-	  If unsure, say N.
-
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-
-source "drivers/input/touchscreen/mediatek/GT9XX_hotknot_phone/Kconfig"
 
 config TOUCHSCREEN_MTK_SYNAPTICS_I2C_RMI4
 	tristate "Synaptics DSX I2C touchscreen"
@@ -135,6 +122,19 @@ config TOUCHSCREEN_MTK_GT911
 
 	  To compile this dirver as a module, choose M here: the
 	  module will be called.
+	  
+source "drivers/input/touchscreen/mediatek/GT9XXTB_zal1506/Kconfig" 
+config TOUCHSCREEN_TMK_GT9XXTB
+	bool "GT9XXT for Mediatek package"
+	default n
+	help
+	  Say Y here if you have GT911 touch panel.
+
+	  If unsure, say N.
+
+	  To compile this dirver as a module, choose M here: the
+	  module will be called.
+	  
 
 source "drivers/input/touchscreen/mediatek/GT911/Kconfig"
 
@@ -150,195 +150,5 @@ config TOUCHSCREEN_MTK_FT5X0X
 	  module will be called.
 
 source "drivers/input/touchscreen/mediatek/ft5x0x/Kconfig"
-
-config TOUCHSCREEN_MTK_SYNAPTICS_3320_50
-	bool "Synaptics 5.0inch for Mediatek package"
-    default n
-
-
-config TOUCHSCREEN_MTK_GT9271TB_HOTKNOT
-	bool "GT911 for Mediatek package"
-	default n
-	help
-	  Say Y here if you have GT9271TB_HOTKNOT touch panel.
-
-	  If unsure, say N.
-
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-
-source "drivers/input/touchscreen/mediatek/GT9271TB_hotknot/Kconfig"
-
-config TOUCHSCREEN_UNIFIED_DRIVER_4
-	bool "LGE Unified driver Ver4.0"
-	depends on I2C
-	default n
-	help
-	  Say Y here if you use lge unified driver ver4.0
-	  if unsure, say N
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-
-config TOUCHSCREEN_LGE_MIT300
-	bool "Melfas MIT-300 based on LGE Touch Core driver"
-	depends on I2C && TOUCHSCREEN_UNIFIED_DRIVER_4
-	default n
-	help
-	  Say Y here if you have a Mefas MIT-300 I2C touchscreen
-	  connected to your system.
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-
-config TOUCHSCREEN_LGE_MIT300_M4
-	bool "Melfas MIT-300 based on LGE Touch Core driver"
-	depends on I2C && TOUCHSCREEN_UNIFIED_DRIVER_4
-	default n
-	help
-	  Say Y here if you have a Mefas MIT-300 I2C touchscreen
-	  connected to your system.
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-
-config TOUCHSCREEN_LGE_FT8707
-	bool "FT8707 based on LGE Touch Core driver"
-	depends on I2C && TOUCHSCREEN_UNIFIED_DRIVER_4
-	default n
-	help
-	  Say Y here if you have a FT8707 I2C touchscreen
-	  connected to your system.
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-
-source "drivers/input/touchscreen/mediatek/aeon_synaptics_s2714_8536/Kconfig"
-
-config TOUCHSCREEN_AEON_GT1X
-	bool "GT1X for Eastaeon package"
-	default n
-	help
-	  Say Y here if you have GT1X touch panel.
-
-	  If unsure, say N.
-
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-
-config TOUCHSCREEN_AEON_GT9XX
-	bool "GT9XX for Eastaeon package"
-	default n
-	help
-	  Say Y here if you have GT9XX touch panel.
-
-	  If unsure, say N.
-
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-
-config TOUCHSCREEN_AEON_SYNAPTICS_S2714
-	bool "SYNAPTICS_S2714 for Eastaeon package"
-	default n
-	help
-	  Say Y here if you have synaptics_s2714 touch panel.
-
-	  If unsure, say N.
-
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-
-config TOUCHSCREEN_AEON_FACTORY_CTP
-	bool "aeon_factory_ctp for Eastaeon package"
-	default n
-	help
-	  Say Y here if you have aeon_factory_ctp touch panel.
-
-	  If unsure, say N.
-
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-
-config TOUCHSCREEN_AEON_FT5X0X
-	bool "aeon_ft5x0x for Eastaeon package"
-	default n
-	help
-	  Say Y here if you have aeon_ft5x0x touch panel.
-
-	  If unsure, say N.
-
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-
-config TOUCHSCREEN_AEON_FOCALTECH
-	bool "aeon_focaltech for Eastaeon package"
-	default n
-	help
-	  Say Y here if you have aeon_focaltech touch panel.
-
-	  If unsure, say N.
-
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-
-
-config TOUCHSCREEN_AEON_SYNAPTICS_S2714_8536
-        bool "SYNAPTICS_S2714  for AEON package"
-	default n
-	help
-	  Say Y here if you have synaptics s2714 touch panel.
-
-	  If unsure, say N.
-
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-
-source "drivers/input/touchscreen/mediatek/aeon_synaptics_s2714_8536/Kconfig"
-
-config TOUCHSCREEN_AEON_FT5X0X_8536
-        bool "ft5x0x  for AEON package"
-	default n
-	help
-	  Say Y here if you have ft5x0x touch panel.
-
-	  If unsure, say N.
-
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-
-source "drivers/input/touchscreen/mediatek/aeon_ft5x0x_hd720_lide_8536/Kconfig"
-
-config TOUCHSCREEN_MTK_AEON_NT11205_HD720_HLT_8536
-	bool "aeon_nt11205_hd720_hlt_8536 for Mediatek package"
-	default n
-	help
-	  Say Y here if you have aeon_nt11205_hd720_hlt_8536 touch panel.
-
-	  If unsure, say N.
-
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-
-source "drivers/input/touchscreen/mediatek/aeon_nt11205_hd720_hlt_8536/Kconfig"	  
-
-config TOUCHSCREEN_AEON_FT5X0X_8630
-	bool "aeon touchscreen ft5x0x 8630 for Eastaeon package"
-	default n
-	help
-	  Say Y here if you have aeon_ft5x0x touch panel.
-
-	  If unsure, say N.
-
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-source "drivers/input/touchscreen/mediatek/aeon_ft5x0x_hd720_lide_8630/Kconfig"
-
-config TOUCHSCREEN_AEON_MSTAR_8630
-	bool "aeon_mstar_8630_v3.14 for Eastaeon package"
-	default n
-	help
-	  Say Y here if you have mstar touch panel.
-
-	  If unsure, say N.
-
-	  To compile this dirver as a module, choose M here: the
-	  module will be called.
-
 
 endif
