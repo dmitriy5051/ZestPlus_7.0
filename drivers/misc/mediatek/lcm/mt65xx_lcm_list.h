@@ -9,6 +9,11 @@ extern LCM_DRIVER lcm_common_drv;
 
 /* ================================eastaeon==================================== */
 // AEON LCM add here ...
+extern LCM_DRIVER ili9881c_dsi_vdo_hd720_dj_zal875_lcm_drv;
+extern LCM_DRIVER hx8394f_dsi_vdo_hd720_txd_zal875_lcm_drv;
+extern LCM_DRIVER ili9881_dsi_vdo_hd720_dj_zal876_lcm_drv;
+extern LCM_DRIVER ili9881c_dsi_vdo_hd720_ld_zal1506_lcm_drv;
+extern LCM_DRIVER hx8394f_dsi_vdo_hd720_by_zal1506_lcm_drv;
 extern LCM_DRIVER aeon_ili9881c_hd720_dsi_vdo_lide_8536_lcm_drv;	
 extern LCM_DRIVER aeon_ili9881c_hd720_dsi_vdo_lide_8536_D_lcm_drv;	
 extern LCM_DRIVER aeon_ili9881c_hd720_dsi_vdo_hlt_8536_25t_lcm_drv;	
